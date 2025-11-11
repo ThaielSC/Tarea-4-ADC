@@ -1,4 +1,3 @@
-# Importar todas las fases
 from lexer import tokenize
 from parser import parse
 from generator import generate_assembly, generate_error_handler
@@ -27,7 +26,7 @@ def compile_expression(expression):
     
     # 3. Generar Assembly optimizado y manejador de errores
     assembly_code = generate_assembly(ast_root)
-    assembly_code.extend(generate_error_handler())
+    # assembly_code.extend(generate_error_handler())
     
     # 4. Reportería
     lines, accesses = count_metrics(assembly_code)
@@ -39,5 +38,22 @@ def compile_expression(expression):
 
 if __name__ == "__main__":
     # La expresión de ejemplo
-    test_expression = "result = a + b * max(c, d)" 
-    compile_expression(test_expression)
+    test_expression = input(">>")
+    print(f"Expression: {test_expression}")
+    
+    # 1. Tokenizar
+    tokens = tokenize(test_expression)
+    # print(f"Tokens: {tokens}")
+    
+    # 2. Parsear y construir AST
+    ast = parse(tokens)
+    # print(f"AST: {ast}")
+
+    # 3. Generar Assembly
+    try:
+        assembly_code = generate_assembly(ast)
+        print("\nGenerated Assembly Code:")
+        for line in assembly_code:
+            print(line)
+    except NotImplementedError as e:
+        print(f"\nError during code generation: {e}")
