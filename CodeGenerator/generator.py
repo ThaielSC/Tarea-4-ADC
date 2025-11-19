@@ -67,13 +67,21 @@ class AssemblyGenerator:
         
         data_block = self._generate_data_block(collector.variables)
         
+        self.instructions = []
+        self.line_count = 0
+        self.mem_access_count = 0
+
         self._add_instruction("START:")
         self._generate_node(self.ast)
-        self._add_instruction("END")
         self._generate_error_routines()
         self._generate_mul_div_subroutines()
         
         return data_block + self.instructions
+
+    def _add_instruction(self, instruction):
+        self.instructions.append(instruction)
+        if not instruction.endswith(':'):
+            self.line_count += 1
 
     def _generate_data_block(self, variables):
         data = ["DATA:"]
@@ -91,13 +99,11 @@ class AssemblyGenerator:
         self._add_instruction("MOV (error), A"); self.mem_access_count += 1
         self._add_instruction("MOV A, 0")
         self._add_instruction("MOV (result), A"); self.mem_access_count += 1
-        self._add_instruction("END")
         self._add_instruction("OVERFLOW_ERROR:")
         self._add_instruction("MOV A, 1")
         self._add_instruction("MOV (error), A"); self.mem_access_count += 1
         self._add_instruction("MOV A, 0")
         self._add_instruction("MOV (result), A"); self.mem_access_count += 1
-        self._add_instruction("END")
 
     def _generate_mul_div_subroutines(self):
         # MUL: A = A * B. Destroys B.
@@ -109,7 +115,7 @@ class AssemblyGenerator:
         self.mem_access_count += 1
         self._add_instruction("MUL_LOOP:")
         self._add_instruction("CMP B, 0")
-        self._add_instruction("JZ MUL_EXIT")
+        self._add_instruction("JEQ MUL_EXIT")
         self._add_instruction("SUB B, 1")
         self._add_instruction("MOV A, (_temp_mul_res)")
         self.mem_access_count += 1
@@ -142,11 +148,6 @@ class AssemblyGenerator:
         self.mem_access_count += 1
         self._add_instruction("RET")
 
-    def _add_instruction(self, instruction):
-        self.instructions.append(instruction)
-        if not instruction.endswith(':'):
-            self.line_count += 1
-        
     def _generate_node(self, node):
         method_name = f"_generate_{type(node).__name__}"
         generator = getattr(self, method_name)
@@ -162,27 +163,26 @@ class AssemblyGenerator:
             TokenType.PLUS: "ADD", TokenType.MINUS: "SUB",
             TokenType.MULTIPLY: "CALL MUL_SUBROUTINE", 
             TokenType.DIVIDE: "CALL DIV_SUBROUTINE",
-            TokenType.MODULO: "CALL DIV_SUBROUTINE", # Remainder is in A after DIV
+            TokenType.MODULO: "CALL DIV_SUBROUTINE",
         }
         op_instruction = op_map[node.op.type]
 
         if op_instruction == "CALL DIV_SUBROUTINE":
             self._generate_node(node.right)
             self._add_instruction("CMP A, 0")
-            self._add_instruction("JZ DIV_ZERO_ERROR")
-            self._push_temp() # Save divisor
+            self._add_instruction("JEQ DIV_ZERO_ERROR")
+            self._push_temp()
             self._generate_node(node.left)
-            self._pop_temp() # Restore divisor to B
+            self._pop_temp()
             self._add_instruction(op_instruction)
             if node.op.type == TokenType.MODULO:
-                # After DIV, quotient is in C, remainder in A. We want remainder.
-                pass # Remainder is already in A
+                pass
             return
 
         self._generate_node(node.right)
         self._push_temp()
         self._generate_node(node.left)
-        self._pop_temp() # operand1 in A, operand2 in B
+        self._pop_temp()
         
         if op_instruction.startswith("CALL"):
              self._add_instruction(op_instruction)
@@ -212,7 +212,7 @@ class AssemblyGenerator:
             self._generate_node(node.arguments[1])
             self._push_temp()
             self._generate_node(node.arguments[0])
-            self._pop_temp() # arg1 in A, arg2 in B
+            self._pop_temp()
             self._add_instruction(f"CMP A, B")
             label = self._new_label()
             jump_instruction = "JGE" if func_name == 'max' else "JLE"
@@ -231,9 +231,8 @@ class AssemblyGenerator:
     def _pop_temp(self):
         loc = self.temp_storage.pop()
         if loc == 'B':
-            # Value is already in B, nothing to do
             pass
-        else: # loc == 'STACK'
+        else:
             self._add_instruction("POP B")
 
     def _new_label(self):
