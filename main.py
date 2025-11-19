@@ -4,7 +4,7 @@ from CodeGenerator.generator import AssemblyGenerator
 
 
 def main():
-    source_code = "result = a + b - c * (d / e) + max(f, g)"
+    source_code = "result = a * b / c"
     lexer = Lexer(source_code)
     tokens = list(lexer.tokens())
 
