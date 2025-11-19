@@ -131,7 +131,8 @@ class AssemblyGenerator:
         
         # DIV: A = A / B. Remainder in A, Quotient in A on return. Destroys B.
         self._add_instruction("DIV_SUBROUTINE:")
-        self._add_instruction("MOV (temp_div_quot), 0")
+        self._add_instruction("MOV A, 0")
+        self._add_instruction("MOV (temp_div_quot), A")
         self.mem_access_count += 1
         self._add_instruction("DIV_LOOP:")
         self._add_instruction("CMP A, B")
