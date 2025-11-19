@@ -135,7 +135,7 @@ class AssemblyGenerator:
         self.mem_access_count += 1
         self._add_instruction("DIV_LOOP:")
         self._add_instruction("CMP A, B")
-        self._add_instruction("JL DIV_EXIT")
+        self._add_instruction("JLT DIV_EXIT")
         self._add_instruction("SUB A, B")
         self._add_instruction("MOV B, (_temp_div_quot)") # Use B as temp
         self.mem_access_count += 1
