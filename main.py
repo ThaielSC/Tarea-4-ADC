@@ -4,11 +4,12 @@ from CodeGenerator.generator import AssemblyGenerator
 
 
 def main():
-    source_code = "result = a * b / c"
+    print("Compilador...")
+    source_code = input(">> ")
     lexer = Lexer(source_code)
     tokens = list(lexer.tokens())
 
-    print(f"Tokens for: '{source_code}'")
+    print(f"\nTokens for: '{source_code}'")
     for token in tokens:
         print(token)
 

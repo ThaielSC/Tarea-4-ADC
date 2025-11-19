@@ -86,7 +86,7 @@ class AssemblyGenerator:
     def _generate_data_block(self, variables):
         data = ["DATA:"]
         # Add temp vars for subroutines
-        temp_vars = {'_temp_mul_op', '_temp_mul_res', '_temp_div_quot'}
+        temp_vars = {'temp_mul_op', 'temp_mul_res', 'temp_div_quot'}
         all_vars = sorted(list(variables | {'error', 'result'} | temp_vars))
         for var in all_vars:
             data.append(f"{var} 0")
@@ -108,43 +108,43 @@ class AssemblyGenerator:
     def _generate_mul_div_subroutines(self):
         # MUL: A = A * B. Destroys B.
         self._add_instruction("MUL_SUBROUTINE:")
-        self._add_instruction("MOV (_temp_mul_op), A")
+        self._add_instruction("MOV (temp_mul_op), A")
         self.mem_access_count += 1
         self._add_instruction("MOV A, 0")
-        self._add_instruction("MOV (_temp_mul_res), A")
+        self._add_instruction("MOV (temp_mul_res), A")
         self.mem_access_count += 1
         self._add_instruction("MUL_LOOP:")
         self._add_instruction("CMP B, 0")
         self._add_instruction("JEQ MUL_EXIT")
         self._add_instruction("SUB B, 1")
-        self._add_instruction("MOV A, (_temp_mul_res)")
+        self._add_instruction("MOV A, (temp_mul_res)")
         self.mem_access_count += 1
-        self._add_instruction("ADD A, (_temp_mul_op)")
+        self._add_instruction("ADD A, (temp_mul_op)")
         self.mem_access_count += 1
-        self._add_instruction("MOV (_temp_mul_res), A")
+        self._add_instruction("MOV (temp_mul_res), A")
         self.mem_access_count += 1
         self._add_instruction("JMP MUL_LOOP")
         self._add_instruction("MUL_EXIT:")
-        self._add_instruction("MOV A, (_temp_mul_res)")
+        self._add_instruction("MOV A, (temp_mul_res)")
         self.mem_access_count += 1
         self._add_instruction("RET")
         
         # DIV: A = A / B. Remainder in A, Quotient in A on return. Destroys B.
         self._add_instruction("DIV_SUBROUTINE:")
-        self._add_instruction("MOV (_temp_div_quot), 0")
+        self._add_instruction("MOV (temp_div_quot), 0")
         self.mem_access_count += 1
         self._add_instruction("DIV_LOOP:")
         self._add_instruction("CMP A, B")
         self._add_instruction("JLT DIV_EXIT")
         self._add_instruction("SUB A, B")
-        self._add_instruction("MOV B, (_temp_div_quot)") # Use B as temp
+        self._add_instruction("MOV B, (temp_div_quot)") # Use B as temp
         self.mem_access_count += 1
         self._add_instruction("ADD B, 1")
-        self._add_instruction("MOV (_temp_div_quot), B")
+        self._add_instruction("MOV (temp_div_quot), B")
         self.mem_access_count += 1
         self._add_instruction("JMP DIV_LOOP")
         self._add_instruction("DIV_EXIT:")
-        self._add_instruction("MOV A, (_temp_div_quot)")
+        self._add_instruction("MOV A, (temp_div_quot)")
         self.mem_access_count += 1
         self._add_instruction("RET")
 
