@@ -232,9 +232,18 @@ class AssemblyGenerator:
     def _pop_temp(self):
         loc = self.temp_storage.pop()
         if loc == 'B':
+            # Value is already in B, do nothing.
             pass
-        else:
-            self._add_instruction("POP B")
+        else: # loc == 'STACK'
+            # Get value from stack into B, preserving A
+            # PUSH A (save current A)
+            # POP A  (get stack value into A)
+            # MOV B, A (move it to B)
+            # POP A  (restore original A)
+            self._add_instruction("PUSH A")
+            self._add_instruction("POP A")
+            self._add_instruction("MOV B, A")
+            self._add_instruction("POP A")
 
     def _new_label(self):
         self.label_count += 1
